@@ -1,5 +1,6 @@
 const Song = require('../models/Song');
 const ApiResponse = require('../utils/response.util');
+const { uploadOnCloudinary } = require('../utils/cloudinary');
 
 // @desc    Get all selected songs
 // @route   GET /api/songs/selected
@@ -56,11 +57,25 @@ exports.shuffleSongs = async (req, res) => {
 // @access  Protected
 exports.addSong = async (req, res) => {
     try {
-        const { name, artist, language, url, lyrics, album } = req.body;
+        const { name, artist, language, lyrics, album } = req.body;
 
-        if (!name || !artist || !language || !url) {
-            return ApiResponse(res, 400, 'Please provide name, artist, language, and url');
+        // Check if file is uploaded
+        if (!req.file) {
+             return ApiResponse(res, 400, 'Song file is required');
         }
+
+        if (!name || !artist || !language) {
+            return ApiResponse(res, 400, 'Please provide name, artist, and language');
+        }
+
+        const songLocalPath = req.file.path;
+        const songUpload = await uploadOnCloudinary(songLocalPath);
+
+        if (!songUpload) {
+             return ApiResponse(res, 500, 'Failed to upload song file');
+        }
+
+        const url = songUpload.url;
 
         // Check for duplicate song name (case-insensitive)
         const existingSong = await Song.findOne({ 
