@@ -31,12 +31,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
 
     useEffect(() => {
-        // Check for token in localStorage on mount
+
         const storedUser = localStorage.getItem('antakshari_user');
         if (storedUser) {
             const parsedUser = JSON.parse(storedUser);
             setUser(parsedUser);
-            // Set auth header for all requests
+
             api.defaults.headers.common['Authorization'] = `Bearer ${parsedUser.token}`;
         }
         setLoading(false);

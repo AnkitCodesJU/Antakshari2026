@@ -32,7 +32,7 @@ export default function AuthPage() {
         const endpoint = isLogin ? "/auth/login" : "/auth/register";
 
         try {
-            // Basic validation
+
             if (!isLogin && !formData.username) {
                 throw new Error("Username is required");
             }

@@ -22,7 +22,7 @@ const SongCard: React.FC<SongCardProps> = ({ song, onDelete }) => {
 
         try {
             if (isEnded) {
-                // Restart logic
+
                 audio.currentTime = 0;
                 await audio.play();
                 setIsPlaying(true);
@@ -39,7 +39,7 @@ const SongCard: React.FC<SongCardProps> = ({ song, onDelete }) => {
                     }
                 });
 
-                // Play and catch abort errors
+
                 await audio.play();
                 setIsPlaying(true);
             }
@@ -135,7 +135,7 @@ const SongCard: React.FC<SongCardProps> = ({ song, onDelete }) => {
                     )}
                 </div>
 
-                {/* Improved Added By Section */}
+
                 {song.added_by && (
                     <div className="flex items-center gap-1.5 mt-2 bg-black/20 p-1.5 rounded-lg w-fit">
                         <div className="p-0.5 bg-white/10 rounded-full">
@@ -149,7 +149,7 @@ const SongCard: React.FC<SongCardProps> = ({ song, onDelete }) => {
             </div>
 
             <div className="p-4 bg-black/20 z-10">
-                {/* Seekbar */}
+
                 <div className="flex items-center gap-2 mb-3">
                     <span className="text-[10px] text-text-muted w-8 tabular-nums text-right">{formatTime(progress)}</span>
                     <div className="relative flex-1 h-1 bg-white/10 rounded-full cursor-pointer group/seek">
@@ -171,7 +171,7 @@ const SongCard: React.FC<SongCardProps> = ({ song, onDelete }) => {
                     <span className="text-[10px] text-text-muted w-8 tabular-nums">{formatTime(duration)}</span>
                 </div>
 
-                {/* Controls */}
+
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1 text-[10px] text-text-muted/60">

@@ -20,7 +20,7 @@ export default function Home() {
 
       // If no songs selected initially (fresh DB), shuffle once
       if (!songsData || songsData.length === 0) {
-        const shuffleRes = await api.post<ApiResponse<Song[]>>('/songs/shuffle'); // Updated endpoint path
+        const shuffleRes = await api.post<ApiResponse<Song[]>>('/songs/shuffle');
         setSongs(shuffleRes.data.data);
       } else {
         setSongs(songsData);
@@ -40,7 +40,7 @@ export default function Home() {
     setSongs(newSongs);
   };
 
-  // Dynamically group songs by language
+
   const groupedSongs = songs.reduce((acc, song) => {
     if (!acc[song.language]) {
       acc[song.language] = [];
@@ -49,14 +49,14 @@ export default function Home() {
     return acc;
   }, {} as Record<string, Song[]>);
 
-  // Get unique languages from grouped songs
+
   const languages = Object.keys(groupedSongs);
 
   return (
     <AuthGuard>
       <main className="min-h-screen bg-dark-bg text-foreground pb-20">
 
-        {/* Content */}
+
         <div className="max-w-7xl mx-auto px-6 py-6 space-y-10">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-white">Current Round</h2>
