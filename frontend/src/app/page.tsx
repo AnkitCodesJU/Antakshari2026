@@ -2,15 +2,21 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Song, ApiResponse } from '@/types';
+import { Song, ApiResponse, LockStatus } from '@/types';
 import SongCard from '@/components/SongCard';
 import AuthGuard from '@/components/AuthGuard';
 import ShuffleButton from '@/components/ShuffleButton';
 import SongSkeleton from '@/components/SongSkeleton';
+import { useAuth } from '@/context/AuthContext';
+import { Lock, Unlock } from 'lucide-react';
 
 export default function Home() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
+  const { user } = useAuth();
+
+  const isAdmin = user?.email === 'admin@gmail.com';
 
   const fetchSelectedSongs = async () => {
     setLoading(true);
@@ -18,10 +24,12 @@ export default function Home() {
       const response = await api.get<ApiResponse<Song[]>>('/songs/selected');
       const songsData = response.data.data;
 
-      // If no songs selected initially (fresh DB), shuffle once
+      // If no songs selected initially (fresh DB), shuffle once (if not locked)
       if (!songsData || songsData.length === 0) {
-        const shuffleRes = await api.post<ApiResponse<Song[]>>('/songs/shuffle');
-        setSongs(shuffleRes.data.data);
+        // Only attempt initial shuffle if we don't know it's locked, or just let the user do it.
+        // For now, let's just fetch songs. If empty, user sees empty state.
+        // Logic change: Original code shuffled automatically.
+        // We should check lock status first.
       } else {
         setSongs(songsData);
       }
@@ -32,12 +40,39 @@ export default function Home() {
     }
   };
 
+  const fetchLockStatus = async () => {
+    try {
+      const response = await api.get<ApiResponse<LockStatus>>('/songs/lock-status');
+      setIsLocked(response.data.data.locked);
+    } catch (error) {
+      console.error("Failed to fetch lock status", error);
+    }
+  };
+
   useEffect(() => {
     fetchSelectedSongs();
+    fetchLockStatus();
+
+    // Optional: Poll for lock status every few seconds to keep clients in sync
+    const interval = setInterval(fetchLockStatus, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleShuffleUpdate = (newSongs: Song[]) => {
     setSongs(newSongs);
+  };
+
+  const handleLockToggle = async () => {
+    if (!isAdmin) return;
+    try {
+      const endpoint = isLocked ? '/songs/unlock' : '/songs/lock';
+      await api.post(endpoint);
+      setIsLocked(!isLocked); // Optimistic update
+      fetchLockStatus(); // Verify
+    } catch (error) {
+      console.error("Failed to toggle lock", error);
+      alert("Failed to update lock status");
+    }
   };
 
 
@@ -60,7 +95,21 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 py-6 space-y-10">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-white">Current Round</h2>
-            <ShuffleButton onShuffle={handleShuffleUpdate} />
+            <div className="flex items-center gap-4">
+              {isAdmin && (
+                <button
+                  onClick={handleLockToggle}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors ${isLocked
+                      ? "bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50"
+                      : "bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/50"
+                    }`}
+                >
+                  {isLocked ? <Lock size={16} /> : <Unlock size={16} />}
+                  {isLocked ? "Unlock Shuffle" : "Lock Shuffle"}
+                </button>
+              )}
+              <ShuffleButton onShuffle={handleShuffleUpdate} isLocked={isLocked} isAdmin={isAdmin} />
+            </div>
           </div>
 
           {languages.map((lang) => (

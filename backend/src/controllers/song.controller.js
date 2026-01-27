@@ -1,4 +1,5 @@
 const Song = require('../models/Song');
+const SystemState = require('../models/SystemState');
 const ApiResponse = require('../utils/response.util');
 const { uploadOnCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
 
@@ -8,6 +9,7 @@ const { uploadOnCloudinary, deleteFromCloudinary } = require('../utils/cloudinar
 exports.getSelectedSongs = async (req, res) => {
     try {
         const selectedSongs = await Song.find({ is_selected: true });
+        // Also fetch lock status to send with response if needed, or separate call
         return ApiResponse(res, 200, 'Selected songs fetched successfully', selectedSongs);
     } catch (err) {
         return ApiResponse(res, 500, err.message);
@@ -16,9 +18,21 @@ exports.getSelectedSongs = async (req, res) => {
 
 // @desc    Shuffle and select new random songs
 // @route   POST /api/songs/shuffle
-// @access  Public
+// @access  Public (but restricted if locked)
 exports.shuffleSongs = async (req, res) => {
     try {
+        // Check if shuffle is locked
+        const lockState = await SystemState.findOne({ key: 'SHUFFLE_LOCKED' });
+        const isLocked = lockState ? lockState.value : false;
+
+        // If locked, only admin can shuffle
+        if (isLocked) {
+             // Check if user is admin
+             if (!req.user || req.user.email !== 'admin@gmail.com') {
+                 return ApiResponse(res, 403, 'Shuffle is currently locked by Admin.');
+             }
+        }
+
         // 1. Reset all songs to unselected
         await Song.updateMany({}, { is_selected: false });
 
@@ -51,6 +65,63 @@ exports.shuffleSongs = async (req, res) => {
         return ApiResponse(res, 500, err.message);
     }
 };
+
+// @desc    Lock Shuffle (Admin only)
+// @route   POST /api/songs/lock
+// @access  Protected
+exports.lockShuffle = async (req, res) => {
+    try {
+        if (req.user.email !== 'admin@gmail.com') {
+            return ApiResponse(res, 403, 'Not authorized');
+        }
+
+        await SystemState.findOneAndUpdate(
+            { key: 'SHUFFLE_LOCKED' },
+            { value: true, updatedBy: req.user.email },
+            { upsert: true, new: true }
+        );
+
+        return ApiResponse(res, 200, 'Shuffle locked successfully');
+    } catch (err) {
+        return ApiResponse(res, 500, err.message);
+    }
+};
+
+// @desc    Unlock Shuffle (Admin only)
+// @route   POST /api/songs/unlock
+// @access  Protected
+exports.unlockShuffle = async (req, res) => {
+    try {
+        if (req.user.email !== 'admin@gmail.com') {
+            return ApiResponse(res, 403, 'Not authorized');
+        }
+
+        await SystemState.findOneAndUpdate(
+            { key: 'SHUFFLE_LOCKED' },
+            { value: false, updatedBy: req.user.email },
+            { upsert: true, new: true }
+        );
+
+        return ApiResponse(res, 200, 'Shuffle unlocked successfully');
+    } catch (err) {
+        return ApiResponse(res, 500, err.message);
+    }
+};
+
+// @desc    Get Shuffle Lock Status
+// @route   GET /api/songs/lock-status
+// @access  Public
+exports.getShuffleStatus = async (req, res) => {
+    try {
+        const lockState = await SystemState.findOne({ key: 'SHUFFLE_LOCKED' });
+        const isLocked = lockState ? lockState.value : false;
+        
+        return ApiResponse(res, 200, 'Shuffle status fetched', { locked: isLocked });
+    } catch (err) {
+        return ApiResponse(res, 500, err.message);
+    }
+};
+
 
 // @desc    Add a new song
 // @route   POST /api/songs
@@ -161,3 +232,4 @@ exports.deleteSong = async (req, res) => {
         return ApiResponse(res, 500, err.message);
     }
 };
+
