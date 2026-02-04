@@ -2,6 +2,11 @@
 
 Antakshari 2025 is a modern, full-stack web application designed to manage and organize songs for an Antakshari game. It was specifically created to ace the CIIPPUS 2026 Antakshari Competition at Jadavpur University. This platform allows users to add songs, shuffle them for rounds, and employs an admin-controlled locking mechanism to ensure fair play.
 
+## 🚀 Live Demo
+**[Click here to use the App](https://antakshari-v1.onrender.com/)**
+
+---
+
 ## ✨ Features
 
 ### 🔐 Authentication
